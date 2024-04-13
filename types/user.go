@@ -1,5 +1,20 @@
 package types
 
+import (
+	"fmt"
+	"regexp"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
+)
+
+const (
+	bcryptCost      = 12
+	minFirstNameLen = 2
+	minLastNameLen  = 2
+	minPasswordLen  = 7
+)
+
 type CreateUserParams struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
@@ -8,13 +23,44 @@ type CreateUserParams struct {
 }
 
 type User struct {
-	ID                string `bson:"_id,omitempty" json:"id,omitempty"`
-	FirstName         string `bson:"firstName" json:"firstName"`
-	LastName          string `bson:"lastName" json:"lastName"`
-	Email             string `bson: "email" json:"email"`
-	EncryptedPassword string `bson: "EncryptedPassword" json:"-"`
+	ID                primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	FirstName         string             `bson:"firstName" json:"firstName"`
+	LastName          string             `bson:"lastName" json:"lastName"`
+	Email             string             `bson: "email" json:"email"`
+	EncryptedPassword string             `bson: "EncryptedPassword" json:"-"`
+}
+
+func (params CreateUserParams) Validate() []string {
+	errors := []string{}
+	if len(params.FirstName) < minFirstNameLen {
+		errors = append(errors, fmt.Sprintf("invalid first name, it needs to have at least %d characters", minFirstNameLen))
+	}
+	if len(params.LastName) < minLastNameLen {
+		errors = append(errors, fmt.Sprintf("invalid last name, it needs to have at least %d characters", minLastNameLen))
+	}
+	if len(params.Password) < minPasswordLen {
+		errors = append(errors, fmt.Sprintf("invalid password, it needs to have at least %d characters", minPasswordLen))
+	}
+	if !isEmailValid(params.Email) {
+		errors = append(errors, "invalid email format")
+	}
+	return errors
+}
+
+func isEmailValid(e string) bool {
+	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
+	return emailRegex.MatchString(e)
 }
 
 func NewUserFromParams(params CreateUserParams) (*User, error) {
-	return nil, nil
+	encpw, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcryptCost)
+	if err != nil {
+		return nil, err
+	}
+	return &User{
+		FirstName:         params.FirstName,
+		LastName:          params.LastName,
+		Email:             params.Email,
+		EncryptedPassword: string(encpw),
+	}, nil
 }

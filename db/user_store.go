@@ -44,14 +44,23 @@ func (s *MongoUserStore) GetUserById(ctx context.Context, id string) (*types.Use
 
 func (s *MongoUserStore) GetUsers(ctx context.Context) ([]*types.User, error) {
 	cur, err := s.coll.Find(ctx, bson.M{})
-
 	if err != nil {
 		return nil, err
 	}
-	users := []*types.User{}
-	if err := cur.Decode(&users); err != nil {
-		return users, nil
+	var users []*types.User
+	if err := cur.All(ctx, &users); err != nil {
+		return nil, err
 	}
 
 	return users, nil
+}
+
+func (s *MongoUserStore) CreateUser(ctx context.Context, user *types.User) (*types.User, error) {
+	result, err := s.coll.InsertOne(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	user.ID = result.InsertedID.(primitive.ObjectID)
+	return user, nil
 }

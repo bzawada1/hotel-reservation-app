@@ -2,8 +2,10 @@ package api
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bzawada1/hotel-reservation-app/db"
+	"github.com/bzawada1/hotel-reservation-app/types"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -36,5 +38,20 @@ func (h *UserHandler) HandleGetUser(c *fiber.Ctx) error {
 }
 
 func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
-	return nil
+	params := types.CreateUserParams{}
+	if err := c.BodyParser(&params); err != nil {
+		return fmt.Errorf("Invalid request payload")
+	}
+	if errors := params.Validate(); len(errors) > 0 {
+		return c.JSON(errors)
+	}
+	user, err := types.NewUserFromParams(params)
+	if err != nil {
+		return err
+	}
+	insertedUser, err := h.userStore.CreateUser(c.Context(), user)
+	if err != nil {
+		return err
+	}
+	return c.JSON(insertedUser)
 }
