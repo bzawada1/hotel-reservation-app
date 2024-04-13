@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/bzawada1/hotel-reservation-app/db"
-	"github.com/bzawada1/hotel-reservation-app/types"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -19,11 +18,11 @@ func NewUserHandler(userStore db.UserStore) *UserHandler {
 }
 
 func (h *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
-	u := types.User{
-		FirstName: "James",
-		LastName:  "Doe",
+	users, err := h.userStore.GetUsers(c.Context())
+	if err != nil {
+		return err
 	}
-	return c.JSON(u)
+	return c.JSON(users)
 }
 
 func (h *UserHandler) HandleGetUser(c *fiber.Ctx) error {
@@ -34,4 +33,8 @@ func (h *UserHandler) HandleGetUser(c *fiber.Ctx) error {
 		return err
 	}
 	return c.JSON(user)
+}
+
+func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
+	return nil
 }
