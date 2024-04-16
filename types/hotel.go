@@ -5,8 +5,9 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 type Hotel struct {
 	ID       primitive.ObjectID   `bson:"_id,omitempty" json:"id,omitempty"`
 	Name     string               `bson:"name" json:"name"`
-	Location string               `bson:"name" json:"location"`
-	Rooms    []primitive.ObjectID `bson:"location" json:"rooms"`
+	Location string               `bson:"location" json:"location"`
+	Rooms    []primitive.ObjectID `bson:"rooms" json:"rooms"`
+	Rating   int                  `bson:"rating" json:"rating"`
 }
 
 type Room struct {
@@ -14,7 +15,7 @@ type Room struct {
 	Type      RoomType           `bson:"type" json:"type"`
 	BasePrice float64            `bson:"basePrice" json:"basePrice"`
 	Price     float64            `bson:"price" json:"price"`
-	IHotelID  primitive.ObjectID `bson:"hotelID" json:"hotelID"`
+	HotelID   primitive.ObjectID `bson:"hotelID" json:"hotelID"`
 }
 
 type RoomType int
