@@ -13,6 +13,7 @@ const roomColl = "rooms"
 
 type RoomStore interface {
 	InsertRoom(context.Context, *types.Room) (*types.Room, error)
+	GetRoomsByHotelId(context.Context, string) ([]*types.Room, error)
 	// GetRooms(context.Context) ([]*types.Room, error)
 	// GetRoomById(context.Context, string) (*types.Room, error)
 	// DeleteRoom(context.Context, string) error
@@ -46,4 +47,20 @@ func (s *MongoRoomStore) InsertRoom(ctx context.Context, room *types.Room) (*typ
 		return nil, err
 	}
 	return room, nil
+}
+
+func (s *MongoRoomStore) GetRoomsByHotelId(ctx context.Context, hotelId string) ([]*types.Room, error) {
+	hotelOid, err := primitive.ObjectIDFromHex(hotelId)
+	if err != nil {
+		return nil, err
+	}
+	cur, err := s.coll.Find(ctx, bson.M{"hotelID": hotelOid})
+	if err != nil {
+		return nil, err
+	}
+	rooms := []*types.Room{}
+	if err := cur.All(ctx, &rooms); err != nil {
+		return nil, err
+	}
+	return rooms, nil
 }

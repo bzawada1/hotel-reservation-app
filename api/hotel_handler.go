@@ -58,3 +58,12 @@ func (h *HotelHandler) HandleDeleteHotel(c *fiber.Ctx) error {
 	}
 	return c.JSON(map[string]string{"deleted": hotelId})
 }
+
+func (h *HotelHandler) HandleGetRooms(c *fiber.Ctx) error {
+	hotelId := c.Params("id")
+	rooms, err := h.roomStore.GetRoomsByHotelId(c.Context(), hotelId)
+	if err != nil {
+		return err
+	}
+	return c.JSON(rooms)
+}
