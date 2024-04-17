@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/bzawada1/hotel-reservation-app/api"
+	"github.com/bzawada1/hotel-reservation-app/api/middleware"
 	"github.com/bzawada1/hotel-reservation-app/db"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -22,16 +23,23 @@ func main() {
 	listenAddr := flag.String("listenAddr", ":5000", "The listen address of the API server")
 	flag.Parse()
 	app := fiber.New(config)
-	apiv1 := app.Group("/api/v1")
+	apiv1 := app.Group("/api/v1", middleware.JWTAuthentication)
+	auth := app.Group("/api")
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DbUri))
 	if err != nil {
 		log.Fatal(err)
 	}
-	userHandler := api.NewUserHandler(db.NewMongoUserStore(client, db.DbName))
-	var hotelStore = db.NewMongoHotelStore(client)
-	var roomStore = db.NewMongoRoomStore(client, hotelStore)
-	var hotelHandler = api.NewHotelHandler(hotelStore, roomStore)
+	hotelStore := db.NewMongoHotelStore(client)
+	store := &db.Store{
+		User:  db.NewMongoUserStore(client),
+		Hotel: db.NewMongoHotelStore(client),
+		Room:  db.NewMongoRoomStore(client, hotelStore),
+	}
+	userHandler := api.NewUserHandler(store)
+	hotelHandler := api.NewHotelHandler(store)
+	authHandler := api.NewAuthHandler(store.User)
 
+	auth.Post("/auth", authHandler.HandleAuthenticate)
 	apiv1.Get("/user", userHandler.HandleGetUsers)
 	apiv1.Get("/user/:id", userHandler.HandleGetUser)
 	apiv1.Post("/user", userHandler.HandlePostUser)

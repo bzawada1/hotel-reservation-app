@@ -14,17 +14,17 @@ import (
 )
 
 type UserHandler struct {
-	userStore db.UserStore
+	store *db.Store
 }
 
-func NewUserHandler(userStore db.UserStore) *UserHandler {
+func NewUserHandler(store *db.Store) *UserHandler {
 	return &UserHandler{
-		userStore: userStore,
+		store: store,
 	}
 }
 
 func (h *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
-	users, err := h.userStore.GetUsers(c.Context())
+	users, err := h.store.User.GetUsers(c.Context())
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,20 @@ func (h *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
 func (h *UserHandler) HandleGetUser(c *fiber.Ctx) error {
 	id := c.Params("id")
 	ctx := context.Background()
-	user, err := h.userStore.GetUserById(ctx, id)
+	user, err := h.store.User.GetUserById(ctx, id)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return c.JSON(map[string]string{"error": "user not found"})
+		}
+		return err
+	}
+	return c.JSON(user)
+}
+
+func (h *UserHandler) HandleGetUserByEmail(c *fiber.Ctx) error {
+	email := c.Params("Email")
+	ctx := context.Background()
+	user, err := h.store.User.GetUserById(ctx, email)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return c.JSON(map[string]string{"error": "user not found"})
@@ -56,7 +69,7 @@ func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	insertedUser, err := h.userStore.CreateUser(c.Context(), user)
+	insertedUser, err := h.store.User.CreateUser(c.Context(), user)
 	if err != nil {
 		return err
 	}
@@ -74,7 +87,7 @@ func (h *UserHandler) HandlePutUser(c *fiber.Ctx) error {
 		return err
 	}
 	filter := bson.M{"_id": oid}
-	if err := h.userStore.UpdateUser(c.Context(), filter, params); err != nil {
+	if err := h.store.User.UpdateUser(c.Context(), filter, params); err != nil {
 		return err
 	}
 	return c.JSON(map[string]string{"updated": userId})
@@ -82,7 +95,7 @@ func (h *UserHandler) HandlePutUser(c *fiber.Ctx) error {
 
 func (h *UserHandler) HandleDeleteUser(c *fiber.Ctx) error {
 	userId := c.Params("id")
-	if err := h.userStore.DeleteUser(c.Context(), userId); err != nil {
+	if err := h.store.User.DeleteUser(c.Context(), userId); err != nil {
 		return err
 	}
 	return c.JSON(map[string]string{"deleted": userId})

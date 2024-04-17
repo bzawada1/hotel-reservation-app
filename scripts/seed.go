@@ -23,7 +23,16 @@ func main() {
 		log.Fatal(err)
 	}
 	hotelStore := db.NewMongoHotelStore(client)
-	roomStore := db.NewMongoRoomStore(client, hotelStore)
+	store := &db.Store{
+		User:  db.NewMongoUserStore(client),
+		Hotel: db.NewMongoHotelStore(client),
+		Room:  db.NewMongoRoomStore(client, hotelStore),
+	}
+	seedHotel(ctx, store)
+	seedUser(ctx, store)
+}
+
+func seedHotel(ctx context.Context, store *db.Store) {
 	hotel := types.Hotel{
 		Name:     "Bellacia",
 		Location: "France",
@@ -32,25 +41,44 @@ func main() {
 	}
 	rooms := []types.Room{
 		{
-			Type:      types.SinglePersonRoomType,
+			Size:      "small",
+			Seaside:   false,
 			BasePrice: 123.5,
 		},
 		{
-			Type:      types.DeluxeRoomType,
+			Size:      "medium",
+			Seaside:   false,
 			BasePrice: 123.5,
 		},
 	}
 
-	insertedHotel, err := hotelStore.Insert(ctx, &hotel)
+	insertedHotel, err := store.Hotel.Insert(ctx, &hotel)
 	if err != nil {
 		log.Fatal(err)
 	}
 	for _, room := range rooms {
 		room.HotelID = insertedHotel.ID
-		insertedRoom, err := roomStore.InsertRoom(ctx, &room)
+		insertedRoom, err := store.Room.InsertRoom(ctx, &room)
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println(insertedHotel, insertedRoom)
+	}
+}
+
+func seedUser(ctx context.Context, store *db.Store) {
+	user, err := types.NewUserFromParams(types.CreateUserParams{
+		FirstName: "John",
+		LastName:  "Dutton",
+		Email:     "test@yellowstone.mn",
+		Password:  "password_montana",
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if _, err := store.User.CreateUser(ctx, user); err != nil {
+		log.Fatal(err)
 	}
 }

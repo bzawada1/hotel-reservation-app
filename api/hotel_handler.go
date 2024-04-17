@@ -10,14 +10,12 @@ import (
 )
 
 type HotelHandler struct {
-	hotelStore db.HotelStore
-	roomStore  db.RoomStore
+	store *db.Store
 }
 
-func NewHotelHandler(hs db.HotelStore, rs db.RoomStore) *HotelHandler {
+func NewHotelHandler(store *db.Store) *HotelHandler {
 	return &HotelHandler{
-		hotelStore: hs,
-		roomStore:  rs,
+		store: store,
 	}
 }
 
@@ -30,7 +28,7 @@ func (h *HotelHandler) HandleGetHotels(c *fiber.Ctx) error {
 	if err := c.QueryParser(&qparams); err != nil {
 		return err
 	}
-	hotels, err := h.hotelStore.GetHotels(c.Context())
+	hotels, err := h.store.Hotel.GetHotels(c.Context())
 	if err != nil {
 		return err
 	}
@@ -41,7 +39,7 @@ func (h *HotelHandler) HandleGetHotels(c *fiber.Ctx) error {
 func (h *HotelHandler) HandleGetHotel(c *fiber.Ctx) error {
 	id := c.Params("id")
 	ctx := context.Background()
-	user, err := h.hotelStore.GetHotelById(ctx, id)
+	user, err := h.store.Hotel.GetHotelById(ctx, id)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return c.JSON(map[string]string{"error": "hotel not found"})
@@ -53,7 +51,7 @@ func (h *HotelHandler) HandleGetHotel(c *fiber.Ctx) error {
 
 func (h *HotelHandler) HandleDeleteHotel(c *fiber.Ctx) error {
 	hotelId := c.Params("id")
-	if err := h.hotelStore.DeleteHotel(c.Context(), hotelId); err != nil {
+	if err := h.store.Hotel.DeleteHotel(c.Context(), hotelId); err != nil {
 		return err
 	}
 	return c.JSON(map[string]string{"deleted": hotelId})
@@ -61,7 +59,7 @@ func (h *HotelHandler) HandleDeleteHotel(c *fiber.Ctx) error {
 
 func (h *HotelHandler) HandleGetRooms(c *fiber.Ctx) error {
 	hotelId := c.Params("id")
-	rooms, err := h.roomStore.GetRoomsByHotelId(c.Context(), hotelId)
+	rooms, err := h.store.Room.GetRoomsByHotelId(c.Context(), hotelId)
 	if err != nil {
 		return err
 	}
