@@ -17,21 +17,27 @@ import (
 )
 
 type testDb struct {
-	db.UserStore
+	*db.Store
 }
 
 func setup(t *testing.T) *testDb {
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DbUri))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.test))
 	if err != nil {
 		log.Fatal(err)
 	}
+	hotelStore := db.NewMongoHotelStore(client, db.TestDbName)
+	store := &db.Store{
+		User:  db.NewMongoUserStore(client, db.TestDbName),
+		Hotel: hotelStore,
+		Room:  db.NewMongoRoomStore(client, hotelStore, db.TestDbName),
+	}
 	return &testDb{
-		UserStore: db.NewMongoUserStore(client, db.DbName),
+		store,
 	}
 }
 
 func (tdb *testDb) teardown(t *testing.T) {
-	if err := tdb.UserStore.Drop(context.TODO()); err != nil {
+	if err := tdb.User.Drop(context.TODO()); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -41,7 +47,7 @@ func TestPostUser(t *testing.T) {
 	defer tdb.teardown(t)
 
 	app := fiber.New()
-	UserHandler := NewUserHandler(tdb.UserStore)
+	UserHandler := NewUserHandler(tdb.Store)
 	app.Post("/", UserHandler.HandlePostUser)
 
 	params := types.CreateUserParams{

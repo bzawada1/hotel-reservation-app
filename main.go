@@ -32,7 +32,7 @@ func main() {
 	hotelStore := db.NewMongoHotelStore(client)
 	store := &db.Store{
 		User:  db.NewMongoUserStore(client),
-		Hotel: db.NewMongoHotelStore(client),
+		Hotel: hotelStore,
 		Room:  db.NewMongoRoomStore(client, hotelStore),
 	}
 	userHandler := api.NewUserHandler(store)

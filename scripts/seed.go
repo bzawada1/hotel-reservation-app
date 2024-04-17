@@ -22,11 +22,11 @@ func main() {
 	if err := client.Database(db.DbName).Drop(ctx); err != nil {
 		log.Fatal(err)
 	}
-	hotelStore := db.NewMongoHotelStore(client)
+	hotelStore := db.NewMongoHotelStore(client, db.DbName)
 	store := &db.Store{
-		User:  db.NewMongoUserStore(client),
-		Hotel: db.NewMongoHotelStore(client),
-		Room:  db.NewMongoRoomStore(client, hotelStore),
+		User:  db.NewMongoUserStore(client, db.DbName),
+		Hotel: hotelStore,
+		Room:  db.NewMongoRoomStore(client, hotelStore, db.DbName),
 	}
 	seedHotel(ctx, store)
 	seedUser(ctx, store)
