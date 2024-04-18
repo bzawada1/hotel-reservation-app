@@ -1,8 +1,7 @@
 package api
 
 import (
-	"context"
-	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,13 +9,12 @@ import (
 	"github.com/bzawada1/hotel-reservation-app/types"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type BookRoomParams struct {
 	FromDate       time.Time `json:"fromDate"`
 	TillDate       time.Time `json:"tillDate"`
-	PersonQuantity int       `json:"personQuantity`
+	PersonQuantity int       `json:"personQuantity"`
 }
 
 type RoomHandler struct {
@@ -29,13 +27,25 @@ func NewRoomHandler(store *db.Store) *RoomHandler {
 	}
 }
 
-func (h *RoomHandler) HandleBookHandler(c *fiber.Ctx) error {
-	roomOid, err := primitive.ObjectIDFromHex(c.Params("id"))
+func (p BookRoomParams) validate() error {
+	now := time.Now()
+	if now.After(p.FromDate) || now.After(p.TillDate) {
+		return fmt.Errorf("cannot book a room in the past")
+	}
+	return nil
+}
+
+func (h *RoomHandler) HandleBooking(c *fiber.Ctx) error {
+	roomId := c.Params("id")
+	roomOid, err := primitive.ObjectIDFromHex(roomId)
 	if err != nil {
 		return err
 	}
 	params := BookRoomParams{}
 	if err := c.BodyParser(&params); err != nil {
+		return err
+	}
+	if err := params.validate(); err != nil {
 		return err
 	}
 	user, ok := c.Context().Value("user").(*types.User)
@@ -45,7 +55,7 @@ func (h *RoomHandler) HandleBookHandler(c *fiber.Ctx) error {
 			Message: "internal server error",
 		})
 	}
-	booking := types.Booking{
+	booking := &types.Booking{
 		UserId:         user.ID,
 		RoomId:         roomOid,
 		FromDate:       params.FromDate,
@@ -53,35 +63,42 @@ func (h *RoomHandler) HandleBookHandler(c *fiber.Ctx) error {
 		PersonQuantity: params.PersonQuantity,
 	}
 
-	return c.JSON()
-}
-
-func (h *RoomHandler) HandleGetHotel(c *fiber.Ctx) error {
-	id := c.Params("id")
-	ctx := context.Background()
-	user, err := h.store.Hotel.GetHotelById(ctx, id)
+	ok, err = h.isRoomAvailableForBooking(c, roomOid, params)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return c.JSON(map[string]string{"error": "hotel not found"})
-		}
 		return err
 	}
-	return c.JSON(user)
+	if !ok {
+		return c.Status(http.StatusBadRequest).JSON(genericResp{
+			Type:    "error",
+			Message: fmt.Sprintf("room %s already booked", roomId),
+		})
+	}
+
+	inserted, err := h.store.Booking.Insert(c.Context(), booking)
+	if err != nil {
+		return err
+	}
+	return c.JSON(inserted)
 }
 
-func (h *RoomHandler) HandleDeleteHotel(c *fiber.Ctx) error {
-	hotelId := c.Params("id")
-	if err := h.store.Hotel.DeleteHotel(c.Context(), hotelId); err != nil {
-		return err
+func (h *RoomHandler) isRoomAvailableForBooking(c *fiber.Ctx, roomId primitive.ObjectID, params BookRoomParams) (bool, error) {
+	bookings, err := h.store.Booking.GetBookings(c.Context(), params.FromDate, params.TillDate, roomId)
+	if err != nil {
+		return false, err
 	}
-	return c.JSON(map[string]string{"deleted": hotelId})
+	ok := len(bookings) == 0
+	return ok, nil
 }
 
 func (h *RoomHandler) HandleGetRooms(c *fiber.Ctx) error {
-	hotelId := c.Params("id")
-	rooms, err := h.store.Room.GetRoomsByHotelId(c.Context(), hotelId)
+	qparams := BookRoomParams{}
+	if err := c.QueryParser(&qparams); err != nil {
+		return err
+	}
+	rooms, err := h.store.Booking.GetRooms(c.Context())
 	if err != nil {
 		return err
 	}
+
 	return c.JSON(rooms)
 }
