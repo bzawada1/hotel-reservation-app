@@ -21,7 +21,7 @@ type testDb struct {
 }
 
 func setup(t *testing.T) *testDb {
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.test))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DbUri))
 	if err != nil {
 		log.Fatal(err)
 	}
