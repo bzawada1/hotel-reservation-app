@@ -29,7 +29,8 @@ func main() {
 		Room:  db.NewMongoRoomStore(client, hotelStore, db.DbName),
 	}
 	seedHotel(ctx, store)
-	seedUser(ctx, store)
+	seedUser(ctx, store, "test@yellowstone.mn", false)
+	seedUser(ctx, store, "test2@yellowstone.mn", true)
 }
 
 func seedHotel(ctx context.Context, store *db.Store) {
@@ -66,19 +67,31 @@ func seedHotel(ctx context.Context, store *db.Store) {
 	}
 }
 
-func seedUser(ctx context.Context, store *db.Store) {
-	user, err := types.NewUserFromParams(types.CreateUserParams{
-		FirstName: "John",
-		LastName:  "Dutton",
-		Email:     "test@yellowstone.mn",
-		Password:  "password_montana",
-	})
+func seedUser(ctx context.Context, store *db.Store, email string, isAdmin bool) {
 
+	user := &types.User{}
+	err := fmt.Errorf("")
+	if isAdmin {
+		user, err = types.NewUserAdminFromParams(types.CreateUserParams{
+			FirstName: "John",
+			LastName:  "Dutton",
+			Email:     email,
+			Password:  "password_montana",
+			IsAdmin:   isAdmin,
+		})
+	} else {
+		user, err = types.NewUserFromParams(types.CreateUserParams{
+			FirstName: "John",
+			LastName:  "Dutton",
+			Email:     email,
+			Password:  "password_montana",
+		})
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	if _, err := store.User.CreateUser(ctx, user); err != nil {
+	_, err = store.User.CreateUser(ctx, user)
+	if err != nil {
 		log.Fatal(err)
 	}
 }

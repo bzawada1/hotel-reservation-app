@@ -21,6 +21,7 @@ type CreateUserParams struct {
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
+	IsAdmin   bool   `json:"isAdmin"`
 }
 
 type UpdateUserParams struct {
@@ -34,6 +35,7 @@ type User struct {
 	LastName          string             `bson:"lastName" json:"lastName"`
 	Email             string             `bson:"email" json:"email"`
 	EncryptedPassword string             `bson:"EncryptedPassword" json:"-"`
+	IsAdmin           bool               `bson:"isAdmin", json:"isAdmin"`
 }
 
 func (params CreateUserParams) Validate() map[string]string {
@@ -70,6 +72,16 @@ func NewUserFromParams(params CreateUserParams) (*User, error) {
 		Email:             params.Email,
 		EncryptedPassword: string(encpw),
 	}, nil
+}
+
+func NewUserAdminFromParams(params CreateUserParams) (*User, error) {
+	user, err := NewUserFromParams(params)
+	if err != nil {
+		return nil, err
+	}
+	user.IsAdmin = true
+
+	return user, nil
 }
 
 func (p UpdateUserParams) ToBSON() bson.M {

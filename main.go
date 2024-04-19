@@ -23,7 +23,6 @@ func main() {
 	listenAddr := flag.String("listenAddr", ":5000", "The listen address of the API server")
 	flag.Parse()
 	app := fiber.New(config)
-	auth := app.Group("/api")
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DbUri))
 	if err != nil {
 		log.Fatal(err)
@@ -39,10 +38,13 @@ func main() {
 		Booking: bookingStore,
 	}
 	apiv1 := app.Group("/api/v1", middleware.JWTAuthentication(userStore))
+	auth := app.Group("/api")
+	admin := apiv1.Group("/admin", middleware.AdminAuth)
 	userHandler := api.NewUserHandler(store)
 	hotelHandler := api.NewHotelHandler(store)
 	authHandler := api.NewAuthHandler(store.User)
 	roomHandler := api.NewRoomHandler(store)
+	bookingHandler := api.NewBookingHandler(store)
 
 	auth.Post("/auth", authHandler.HandleAuthenticate)
 	apiv1.Get("/user", userHandler.HandleGetUsers)
@@ -55,8 +57,10 @@ func main() {
 	apiv1.Get("/hotel/:id", hotelHandler.HandleGetHotel)
 	apiv1.Get("/hotel/:id/rooms", hotelHandler.HandleGetRooms)
 
-	apiv1.Post("/room/:id/book", roomHandler.HandleBooking)
 	apiv1.Get("/room", roomHandler.HandleGetRooms)
+	apiv1.Post("/room/:id/book", roomHandler.HandleBooking)
+	apiv1.Get("/booking", bookingHandler.HandleGetBookings)
+	apiv1.Get("/booking/:id", bookingHandler.HandleGetBooking)
 
 	app.Listen(*listenAddr)
 }
