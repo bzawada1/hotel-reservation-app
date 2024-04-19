@@ -74,16 +74,6 @@ func NewUserFromParams(params CreateUserParams) (*User, error) {
 	}, nil
 }
 
-func NewUserAdminFromParams(params CreateUserParams) (*User, error) {
-	user, err := NewUserFromParams(params)
-	if err != nil {
-		return nil, err
-	}
-	user.IsAdmin = true
-
-	return user, nil
-}
-
 func (p UpdateUserParams) ToBSON() bson.M {
 	m := bson.M{}
 

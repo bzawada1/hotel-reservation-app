@@ -3,9 +3,11 @@ package api
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/bzawada1/hotel-reservation-app/db"
+	"github.com/bzawada1/hotel-reservation-app/types"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -35,12 +37,22 @@ func (h *BookingHandler) HandleGetBookings(c *fiber.Ctx) error {
 
 func (h *BookingHandler) HandleGetBooking(c *fiber.Ctx) error {
 	id := c.Params("id")
-	user, err := h.store.Booking.GetBookingById(c.Context(), id)
+	booking, err := h.store.Booking.GetBookingById(c.Context(), id)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return c.JSON(map[string]string{"error": "booking not found"})
 		}
 		return err
 	}
-	return c.JSON(user)
+	user, ok := c.Context().UserValue("user").(*types.User)
+	if !ok {
+		return err
+	}
+	if booking.UserId != user.ID {
+		return c.Status(http.StatusUnauthorized).JSON(genericResp{
+			Type:    "error",
+			Message: "not authorized",
+		})
+	}
+	return c.JSON(booking)
 }

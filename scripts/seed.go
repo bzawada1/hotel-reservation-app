@@ -68,27 +68,18 @@ func seedHotel(ctx context.Context, store *db.Store) {
 }
 
 func seedUser(ctx context.Context, store *db.Store, email string, isAdmin bool) {
+	user, err := types.NewUserFromParams(types.CreateUserParams{
+		FirstName: "John",
+		LastName:  "Dutton",
+		Email:     email,
+		Password:  "password_montana",
+	})
 
-	user := &types.User{}
-	err := fmt.Errorf("")
-	if isAdmin {
-		user, err = types.NewUserAdminFromParams(types.CreateUserParams{
-			FirstName: "John",
-			LastName:  "Dutton",
-			Email:     email,
-			Password:  "password_montana",
-			IsAdmin:   isAdmin,
-		})
-	} else {
-		user, err = types.NewUserFromParams(types.CreateUserParams{
-			FirstName: "John",
-			LastName:  "Dutton",
-			Email:     email,
-			Password:  "password_montana",
-		})
-	}
 	if err != nil {
 		log.Fatal(err)
+	}
+	if isAdmin {
+		user.IsAdmin = true
 	}
 	_, err = store.User.CreateUser(ctx, user)
 	if err != nil {

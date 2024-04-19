@@ -68,7 +68,6 @@ func (s *MongoBookingStore) GetBookings(ctx context.Context, fromDate time.Time,
 }
 
 func (s *MongoBookingStore) GetAllBookings(ctx context.Context, fromDate time.Time, tillDate time.Time) ([]*types.Booking, error) {
-
 	filter := bson.M{}
 	cur, err := s.coll.Find(ctx, filter)
 	if err != nil {
