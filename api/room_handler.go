@@ -74,6 +74,7 @@ func (h *RoomHandler) HandleBooking(c *fiber.Ctx) error {
 		})
 	}
 
+	fmt.Println(c.Context(), booking)
 	inserted, err := h.store.Booking.Insert(c.Context(), booking)
 	if err != nil {
 		return err

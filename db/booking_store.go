@@ -19,6 +19,8 @@ type BookingStore interface {
 	GetBookings(context.Context, time.Time, time.Time, primitive.ObjectID) ([]*types.Booking, error)
 	GetBookingById(context.Context, string) (*types.Booking, error)
 	GetRooms(context.Context) ([]*types.Booking, error)
+	updateBooking(context.Context, primitive.ObjectID, bson.M) error
+	CancelBooking(context.Context, *types.Booking) error
 }
 
 type MongoBookingStore struct {
@@ -104,4 +106,24 @@ func (s *MongoBookingStore) GetRooms(ctx context.Context) ([]*types.Booking, err
 	}
 
 	return bookings, nil
+}
+
+func (s *MongoBookingStore) CancelBooking(c context.Context, b *types.Booking) error {
+	oid, err := primitive.ObjectIDFromHex(b.ID.Hex())
+	if err != nil {
+		return err
+	}
+	updateParams := bson.M{"canceled": true}
+	s.updateBooking(c, oid, updateParams)
+	return err
+}
+
+func (s *MongoBookingStore) updateBooking(c context.Context, id primitive.ObjectID, updateParams bson.M) error {
+	update := bson.D{
+		{
+			"$set", updateParams,
+		},
+	}
+	_, err := s.coll.UpdateByID(c, id, update)
+	return err
 }

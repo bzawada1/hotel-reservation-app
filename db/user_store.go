@@ -89,18 +89,11 @@ func (s *MongoUserStore) CreateUser(ctx context.Context, user *types.User) (*typ
 }
 
 func (s *MongoUserStore) UpdateUser(ctx context.Context, filter bson.M, params types.UpdateUserParams) error {
-	update := bson.D{
-		{
-			"$set", params.ToBSON(),
-		},
-	}
+	update := bson.M{"$set": params}
 	_, err := s.coll.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
 	}
-	// if result.ModifiedCount == 0 {
-	// 	return fmt.Errorf("couldn't update user")
-	// }
 
 	return nil
 }
