@@ -2,15 +2,14 @@ package api
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 
-	"github.com/bzawada1/hotel-reservation-app/db"
-	"github.com/bzawada1/hotel-reservation-app/types"
+	"github.com/bzawada1/hotel-reservation-app/db/fixtures"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -18,15 +17,15 @@ func TestAuthenticateSuccess(t *testing.T) {
 
 	tdb := setup(t)
 	defer tdb.teardown(t)
-	insertedUser, _ := insertTestUser(t, tdb.Store)
+	insertedUser := fixtures.AddUser(tdb.store, "John Test", "Dutton", "test@yellowstone.mn", false)
 
 	app := fiber.New()
-	authHandler := NewAuthHandler(tdb.User)
+	authHandler := NewAuthHandler(tdb.store.User)
 	app.Post("/auth", authHandler.HandleAuthenticate)
 
 	params := AuthParams{
 		Email:    insertedUser.Email,
-		Password: "password_montana",
+		Password: fmt.Sprintf("%s_%s", insertedUser.FirstName, insertedUser.LastName),
 	}
 
 	b, _ := json.Marshal(params)
@@ -57,10 +56,10 @@ func TestAuthenticateWithWrongPasswordFailure(t *testing.T) {
 
 	tdb := setup(t)
 	defer tdb.teardown(t)
-	insertedUser, _ := insertTestUser(t, tdb.Store)
+	insertedUser := fixtures.AddUser(tdb.store, "John Test", "Dutton", "test@yellowstone.mn", false)
 
 	app := fiber.New()
-	authHandler := NewAuthHandler(tdb.User)
+	authHandler := NewAuthHandler(tdb.store.User)
 	app.Post("/auth", authHandler.HandleAuthenticate)
 
 	params := AuthParams{
@@ -89,24 +88,4 @@ func TestAuthenticateWithWrongPasswordFailure(t *testing.T) {
 	if genResp.Message != "invalid credentials" {
 		t.Fatalf("expected generic response message to be invalid credentials but got %s", genResp.Type)
 	}
-}
-
-func insertTestUser(t *testing.T, store *db.Store) (*types.User, error) {
-
-	user, err := types.NewUserFromParams(types.CreateUserParams{
-		FirstName: "John Test",
-		LastName:  "Dutton",
-		Email:     "test@yellowstone.mn",
-		Password:  "password_montana",
-	})
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	createdUser, err := store.User.CreateUser(context.TODO(), user)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return createdUser, nil
 }
