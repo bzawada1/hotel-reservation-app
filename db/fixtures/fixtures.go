@@ -22,7 +22,7 @@ func AddUser(store *db.Store, fistName, lastName, email string, isAdmin bool) *t
 	if err != nil {
 		log.Fatal(err)
 	}
-	user.IsAdmin = true
+	user.IsAdmin = isAdmin
 	insertedUser, err := store.User.CreateUser(context.TODO(), user)
 	if err != nil {
 		log.Fatal(err)

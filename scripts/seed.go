@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	// "time"
-
 	"github.com/bzawada1/hotel-reservation-app/api"
 	"github.com/bzawada1/hotel-reservation-app/db"
 	"github.com/bzawada1/hotel-reservation-app/db/fixtures"

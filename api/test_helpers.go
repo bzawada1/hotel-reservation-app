@@ -30,7 +30,7 @@ func setup(t *testing.T) *testDb {
 		User:    db.NewMongoUserStore(client, db.TestDbName),
 		Hotel:   hotelStore,
 		Room:    db.NewMongoRoomStore(client, hotelStore, db.TestDbName),
-		Booking: db.NewMongoBookingStore(client, db.DbName),
+		Booking: db.NewMongoBookingStore(client, db.TestDbName),
 	}
 
 	return &testDb{
