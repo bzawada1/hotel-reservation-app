@@ -6,10 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/bzawada1/hotel-reservation-app/api/middleware"
 	"github.com/bzawada1/hotel-reservation-app/db/fixtures"
 	"github.com/bzawada1/hotel-reservation-app/types"
-	"github.com/gofiber/fiber/v2"
 )
 
 func TestAdminGetBookings(t *testing.T) {
@@ -22,8 +20,8 @@ func TestAdminGetBookings(t *testing.T) {
 	room := fixtures.AddRoom(tdb.store, "Double bed", true, 140.5, hotel.ID)
 	booking := fixtures.AddBooking(tdb.store, room.ID, user.ID)
 
-	app := fiber.New()
-	admin := app.Group("/", middleware.JWTAuthentication(tdb.store.User), middleware.AdminAuth)
+	app := NewTestApp()
+	admin := app.Group("/", JWTAuthentication(tdb.store.User), AdminAuth)
 	BookingHandler := NewBookingHandler(tdb.store)
 	admin.Get("/", BookingHandler.HandleGetBookings)
 
@@ -55,8 +53,8 @@ func TestAdminGetBookings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.StatusCode == http.StatusOK {
-		t.Fatalf("expected non 200 response, received: %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected status unauthorized, received: %d", resp.StatusCode)
 	}
 }
 
@@ -69,8 +67,8 @@ func TestUserGetBookings(t *testing.T) {
 	room := fixtures.AddRoom(tdb.store, "Double bed", true, 140.5, hotel.ID)
 	booking := fixtures.AddBooking(tdb.store, room.ID, user.ID)
 
-	app := fiber.New()
-	authGroup := app.Group("/", middleware.JWTAuthentication(tdb.store.User))
+	app := NewTestApp()
+	authGroup := app.Group("/", JWTAuthentication(tdb.store.User))
 	BookingHandler := NewBookingHandler(tdb.store)
 	authGroup.Get("/:id", BookingHandler.HandleGetBooking)
 

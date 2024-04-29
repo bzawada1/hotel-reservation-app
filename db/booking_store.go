@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/bzawada1/hotel-reservation-app/types"
@@ -64,7 +63,6 @@ func (s *MongoBookingStore) GetBookings(ctx context.Context, fromDate time.Time,
 	if err := cur.All(ctx, &booking); err != nil {
 		return nil, err
 	}
-	fmt.Println(booking)
 
 	return booking, nil
 }

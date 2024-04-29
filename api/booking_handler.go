@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/bzawada1/hotel-reservation-app/db"
@@ -28,8 +27,9 @@ func (h *BookingHandler) HandleGetBookings(c *fiber.Ctx) error {
 	bookings, err := h.store.Booking.GetAllBookings(c.Context(), fromDate, toDate)
 
 	if err != nil {
-		return err
+		return ErrorNotFound("bookings")
 	}
+	fmt.Println(bookings)
 
 	return c.JSON(bookings)
 }
@@ -39,19 +39,16 @@ func (h *BookingHandler) HandleGetBooking(c *fiber.Ctx) error {
 	booking, err := h.store.Booking.GetBookingById(c.Context(), id)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return c.JSON(map[string]string{"error": "booking not found"})
+			return ErrorNotFound("booking")
 		}
 		return err
 	}
 	user, err := getAuthUser(c)
 	if err != nil {
-		return err
+		return ErrorUnauthorized()
 	}
 	if booking.UserId != user.ID {
-		return c.Status(http.StatusUnauthorized).JSON(genericResp{
-			Type:    "error",
-			Message: "not authorized",
-		})
+		return ErrorUnauthorized()
 	}
 	return c.JSON(booking)
 }
@@ -60,17 +57,14 @@ func (h *BookingHandler) HandleCancelBooking(c *fiber.Ctx) error {
 	id := c.Params("id")
 	booking, err := h.store.Booking.GetBookingById(c.Context(), id)
 	if err != nil {
-		return err
+		return ErrorNotFound("booking")
 	}
 	user, err := getAuthUser(c)
 	if err != nil {
-		return err
+		return ErrorUnauthorized()
 	}
 	if booking.UserId != user.ID {
-		return c.Status(http.StatusUnauthorized).JSON(genericResp{
-			Type:    "error",
-			Message: "not authorized",
-		})
+		return ErrorUnauthorized()
 	}
 
 	booking.Canceled = true

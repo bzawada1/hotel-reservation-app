@@ -14,9 +14,6 @@ const roomColl = "rooms"
 type RoomStore interface {
 	InsertRoom(context.Context, *types.Room) (*types.Room, error)
 	GetRoomsByHotelId(context.Context, string) ([]*types.Room, error)
-	// GetRooms(context.Context) ([]*types.Room, error)
-	// GetRoomById(context.Context, string) (*types.Room, error)
-	// DeleteRoom(context.Context, string) error
 }
 
 type MongoRoomStore struct {

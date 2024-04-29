@@ -2,8 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/bzawada1/hotel-reservation-app/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -108,7 +106,7 @@ func (s *MongoUserStore) DeleteUser(ctx context.Context, id string) error {
 		return err
 	}
 	if result.DeletedCount == 0 {
-		return fmt.Errorf("couldn't delete user with id: %v", id)
+		return err
 	}
 
 	return nil

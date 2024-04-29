@@ -4,9 +4,9 @@ import (
 	"context"
 	"flag"
 	"log"
+	"net/http"
 
 	"github.com/bzawada1/hotel-reservation-app/api"
-	"github.com/bzawada1/hotel-reservation-app/api/middleware"
 	"github.com/bzawada1/hotel-reservation-app/db"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,7 +15,11 @@ import (
 
 var config = fiber.Config{
 	ErrorHandler: func(c *fiber.Ctx, err error) error {
-		return c.JSON(map[string]string{"error": err.Error()})
+		if apiError, ok := err.(api.Error); ok {
+			return c.Status(apiError.Code).JSON(apiError)
+		}
+		internalError := api.NewError(http.StatusInternalServerError, "internal server error")
+		return c.Status(internalError.Code).JSON(internalError)
 	},
 }
 
@@ -37,9 +41,9 @@ func main() {
 		Room:    roomStore,
 		Booking: bookingStore,
 	}
-	apiv1 := app.Group("/api/v1", middleware.JWTAuthentication(userStore))
+	apiv1 := app.Group("/api/v1", api.JWTAuthentication(userStore))
 	auth := app.Group("/api")
-	admin := apiv1.Group("/admin", middleware.AdminAuth)
+	admin := apiv1.Group("/admin", api.AdminAuth)
 	userHandler := api.NewUserHandler(store)
 	hotelHandler := api.NewHotelHandler(store)
 	authHandler := api.NewAuthHandler(store.User)

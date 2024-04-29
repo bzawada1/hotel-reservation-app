@@ -42,7 +42,7 @@ func (h *HotelHandler) HandleGetHotel(c *fiber.Ctx) error {
 	user, err := h.store.Hotel.GetHotelById(ctx, id)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return c.JSON(map[string]string{"error": "hotel not found"})
+			return ErrorNotFound("hotel")
 		}
 		return err
 	}

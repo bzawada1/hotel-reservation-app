@@ -30,7 +30,7 @@ func NewRoomHandler(store *db.Store) *RoomHandler {
 func (p BookRoomParams) validate() error {
 	now := time.Now()
 	if now.After(p.FromDate) || now.After(p.TillDate) {
-		return fmt.Errorf("cannot book a room in the past")
+		return NewError(500, fmt.Sprintf("cannot book a room in the past"))
 	}
 	return nil
 }

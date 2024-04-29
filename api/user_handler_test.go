@@ -8,14 +8,13 @@ import (
 	"testing"
 
 	"github.com/bzawada1/hotel-reservation-app/types"
-	"github.com/gofiber/fiber/v2"
 )
 
 func TestPostUser(t *testing.T) {
 	tdb := setup(t)
 	defer tdb.teardown(t)
 
-	app := fiber.New()
+	app := NewTestApp()
 	UserHandler := NewUserHandler(tdb.store)
 	app.Post("/", UserHandler.HandlePostUser)
 

@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/bzawada1/hotel-reservation-app/db"
 	"github.com/bzawada1/hotel-reservation-app/types"
@@ -26,7 +25,7 @@ func NewUserHandler(store *db.Store) *UserHandler {
 func (h *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
 	users, err := h.store.User.GetUsers(c.Context())
 	if err != nil {
-		return err
+		return ErrorNotFound("users")
 	}
 	return c.JSON(users)
 }
@@ -37,7 +36,7 @@ func (h *UserHandler) HandleGetUser(c *fiber.Ctx) error {
 	user, err := h.store.User.GetUserById(ctx, id)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return c.JSON(map[string]string{"error": "user not found"})
+			return ErrorNotFound("user")
 		}
 		return err
 	}
@@ -50,7 +49,7 @@ func (h *UserHandler) HandleGetUserByEmail(c *fiber.Ctx) error {
 	user, err := h.store.User.GetUserById(ctx, email)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return c.JSON(map[string]string{"error": "user not found"})
+			return ErrorNotFound("user")
 		}
 		return err
 	}
@@ -60,14 +59,14 @@ func (h *UserHandler) HandleGetUserByEmail(c *fiber.Ctx) error {
 func (h *UserHandler) HandlePostUser(c *fiber.Ctx) error {
 	params := types.CreateUserParams{}
 	if err := c.BodyParser(&params); err != nil {
-		return fmt.Errorf("Invalid request payload")
+		return ErrorBadRequest()
 	}
 	if errors := params.Validate(); len(errors) > 0 {
-		return c.JSON(errors)
+		return ErrorBadRequest()
 	}
 	user, err := types.NewUserFromParams(params)
 	if err != nil {
-		return err
+		return ErrorBadRequest()
 	}
 	insertedUser, err := h.store.User.CreateUser(c.Context(), user)
 	if err != nil {
@@ -81,10 +80,10 @@ func (h *UserHandler) HandlePutUser(c *fiber.Ctx) error {
 	userId := c.Params("id")
 	oid, err := primitive.ObjectIDFromHex(userId)
 	if err != nil {
-		return err
+		return ErrorBadRequest()
 	}
 	if err := c.BodyParser(&params); err != nil {
-		return err
+		return ErrorBadRequest()
 	}
 	filter := bson.M{"_id": oid}
 	if err := h.store.User.UpdateUser(c.Context(), filter, params); err != nil {
