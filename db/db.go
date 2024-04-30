@@ -1,10 +1,18 @@
 package db
 
-const (
-	DbName     = "hotel-reservation"
-	TestDbName = "hotel-reservation-test"
-	DbUri      = "mongodb://localhost:27017"
+import (
+	"os"
 )
+
+const (
+// DbName     = os.Getenv("DBNAME")
+// TestDbName = "hotel-reservation-test"
+
+// DbUri      = "mongodb://localhost:27017"
+)
+
+var DbName = os.Getenv("DBNAME")
+var DbUri = os.Getenv("DB_URI")
 
 type Pagination struct {
 	Limit int64

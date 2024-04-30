@@ -9,11 +9,16 @@ import (
 	"github.com/bzawada1/hotel-reservation-app/api"
 	"github.com/bzawada1/hotel-reservation-app/db"
 	"github.com/bzawada1/hotel-reservation-app/db/fixtures"
+	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv/autoload"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err)
+	}
 	ctx := context.Background()
 	fmt.Println("seeding the database")
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DbUri))
@@ -35,9 +40,6 @@ func main() {
 	admin := fixtures.AddUser(store, "John", "Dutton Admin", "test@yellowstone.mn", true)
 	fmt.Println("admin token -->", api.CreateTokenFromUser(admin))
 	fmt.Println("user token -->", api.CreateTokenFromUser(user))
-	// hotel := fixtures.AddHotel(store, "Paris", "Hilton", 4, nil)
-	// room := fixtures.AddRoom(store, "Double bed", true, 140.5, hotel.ID)
-	// fixtures.AddBooking(store, room.ID, user.ID)
 
 	for i := 0; i < 100; i++ {
 		hotel := fixtures.AddHotel(store, "Paris", "Hilton", rand.Intn(5)+1, nil)
