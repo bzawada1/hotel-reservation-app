@@ -69,13 +69,12 @@ func AddRoom(store *db.Store, size string, seaside bool, price float64, hotelId 
 
 func AddBooking(store *db.Store, roomId primitive.ObjectID, userId primitive.ObjectID) *types.Booking {
 	booking := &types.Booking{
-		RoomId:         roomId,
 		FromDate:       time.Now(),
 		PersonQuantity: 4,
 		TillDate:       time.Now().AddDate(0, 0, 2),
 		UserId:         userId,
 	}
-	insertedBooking, err := store.Booking.Insert(context.Background(), booking)
+	insertedBooking, err := store.Booking.Insert(context.Background(), booking, roomId.Hex())
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -5,19 +5,19 @@ import (
 	"fmt"
 
 	"github.com/bzawada1/hotel-reservation-app/types"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const hotelColl = "hotels"
 
 type HotelStore interface {
 	Insert(context.Context, *types.Hotel) (*types.Hotel, error)
-	GetHotels(context.Context) ([]*types.Hotel, error)
+	GetHotels(context.Context, *Pagination) ([]*types.Hotel, error)
 	GetHotelById(context.Context, string) (*types.Hotel, error)
 	DeleteHotel(context.Context, string) error
-	UpdateHotel(context.Context, bson.M, bson.M) error
+	UpdateHotel(context.Context, Filter, Filter) error
 }
 
 type MongoHotelStore struct {
@@ -42,8 +42,11 @@ func (s *MongoHotelStore) Insert(ctx context.Context, hotel *types.Hotel) (*type
 	return hotel, nil
 }
 
-func (s *MongoHotelStore) GetHotels(ctx context.Context) ([]*types.Hotel, error) {
-	cur, err := s.coll.Find(ctx, bson.M{})
+func (s *MongoHotelStore) GetHotels(ctx context.Context, pagination *Pagination) ([]*types.Hotel, error) {
+	opts := options.FindOptions{}
+	opts.SetSkip((pagination.Page - 1) * pagination.Limit)
+	opts.SetLimit(pagination.Limit)
+	cur, err := s.coll.Find(ctx, Filter{}, &opts)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +63,7 @@ func (s *MongoHotelStore) DeleteHotel(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	result, err := s.coll.DeleteOne(ctx, bson.M{"_id": oid})
+	result, err := s.coll.DeleteOne(ctx, Filter{"_id": oid})
 	if err != nil {
 		return err
 	}
@@ -77,13 +80,13 @@ func (s *MongoHotelStore) GetHotelById(ctx context.Context, id string) (*types.H
 		return nil, err
 	}
 	hotel := types.Hotel{}
-	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&hotel); err != nil {
+	if err := s.coll.FindOne(ctx, Filter{"_id": oid}).Decode(&hotel); err != nil {
 		return nil, err
 	}
 	return &hotel, nil
 }
 
-func (s *MongoHotelStore) UpdateHotel(ctx context.Context, filter bson.M, update bson.M) error {
+func (s *MongoHotelStore) UpdateHotel(ctx context.Context, filter Filter, update Filter) error {
 	_, err := s.coll.UpdateOne(ctx, filter, update)
 	return err
 }

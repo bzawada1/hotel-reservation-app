@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/bzawada1/hotel-reservation-app/db"
 	"github.com/gofiber/fiber/v2"
@@ -23,17 +24,28 @@ type HotelQueryParams struct {
 	Rooms bool
 }
 
+type ResourceResponse struct {
+	Results int `json:"results"`
+	Data    any `json:"data"`
+	Page    int `json:"page"`
+}
+
 func (h *HotelHandler) HandleGetHotels(c *fiber.Ctx) error {
+	pagination := &db.Pagination{}
+	if err := c.QueryParser(pagination); err != nil {
+		fmt.Println(err)
+		return ErrorBadRequest()
+	}
 	qparams := HotelQueryParams{}
 	if err := c.QueryParser(&qparams); err != nil {
 		return err
 	}
-	hotels, err := h.store.Hotel.GetHotels(c.Context())
+	hotels, err := h.store.Hotel.GetHotels(c.Context(), pagination)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(hotels)
+	return c.JSON(ResourceResponse{Results: len(hotels), Data: hotels, Page: int(pagination.Page)})
 }
 
 func (h *HotelHandler) HandleGetHotel(c *fiber.Ctx) error {

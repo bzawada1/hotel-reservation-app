@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 
 	"github.com/bzawada1/hotel-reservation-app/api"
 	"github.com/bzawada1/hotel-reservation-app/db"
@@ -34,7 +35,13 @@ func main() {
 	admin := fixtures.AddUser(store, "John", "Dutton Admin", "test@yellowstone.mn", true)
 	fmt.Println("admin token -->", api.CreateTokenFromUser(admin))
 	fmt.Println("user token -->", api.CreateTokenFromUser(user))
-	hotel := fixtures.AddHotel(store, "Paris", "Hilton", 4, nil)
-	room := fixtures.AddRoom(store, "Double bed", true, 140.5, hotel.ID)
-	fixtures.AddBooking(store, room.ID, user.ID)
+	// hotel := fixtures.AddHotel(store, "Paris", "Hilton", 4, nil)
+	// room := fixtures.AddRoom(store, "Double bed", true, 140.5, hotel.ID)
+	// fixtures.AddBooking(store, room.ID, user.ID)
+
+	for i := 0; i < 100; i++ {
+		hotel := fixtures.AddHotel(store, "Paris", "Hilton", rand.Intn(5)+1, nil)
+		room := fixtures.AddRoom(store, "Double bed", true, 140.5, hotel.ID)
+		fixtures.AddBooking(store, room.ID, user.ID)
+	}
 }

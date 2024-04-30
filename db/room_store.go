@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/bzawada1/hotel-reservation-app/types"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -38,8 +37,8 @@ func (s *MongoRoomStore) InsertRoom(ctx context.Context, room *types.Room) (*typ
 	}
 	room.ID = result.InsertedID.(primitive.ObjectID)
 
-	filter := bson.M{"_id": room.HotelID}
-	update := bson.M{"$push": bson.M{"rooms": room.ID}}
+	filter := Filter{"_id": room.HotelID}
+	update := Filter{"$push": Filter{"rooms": room.ID}}
 	if err := s.hotelStore.UpdateHotel(ctx, filter, update); err != nil {
 		return nil, err
 	}
@@ -51,7 +50,7 @@ func (s *MongoRoomStore) GetRoomsByHotelId(ctx context.Context, hotelId string) 
 	if err != nil {
 		return nil, err
 	}
-	cur, err := s.coll.Find(ctx, bson.M{"hotelID": hotelOid})
+	cur, err := s.coll.Find(ctx, Filter{"hotelID": hotelOid})
 	if err != nil {
 		return nil, err
 	}

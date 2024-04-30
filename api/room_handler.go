@@ -37,10 +37,6 @@ func (p BookRoomParams) validate() error {
 
 func (h *RoomHandler) HandleBooking(c *fiber.Ctx) error {
 	roomId := c.Params("id")
-	roomOid, err := primitive.ObjectIDFromHex(roomId)
-	if err != nil {
-		return err
-	}
 	params := BookRoomParams{}
 	if err := c.BodyParser(&params); err != nil {
 		return err
@@ -55,15 +51,8 @@ func (h *RoomHandler) HandleBooking(c *fiber.Ctx) error {
 			Message: "internal server error",
 		})
 	}
-	booking := &types.Booking{
-		UserId:         user.ID,
-		RoomId:         roomOid,
-		FromDate:       params.FromDate,
-		TillDate:       params.TillDate,
-		PersonQuantity: params.PersonQuantity,
-	}
 
-	ok, err = h.isRoomAvailableForBooking(c, roomOid, params)
+	ok, err := h.isRoomAvailableForBooking(c, roomId, user, params)
 	if err != nil {
 		return err
 	}
@@ -74,16 +63,25 @@ func (h *RoomHandler) HandleBooking(c *fiber.Ctx) error {
 		})
 	}
 
-	fmt.Println(c.Context(), booking)
-	inserted, err := h.store.Booking.Insert(c.Context(), booking)
+	booking := &types.Booking{
+		UserId:         user.ID,
+		FromDate:       params.FromDate,
+		TillDate:       params.TillDate,
+		PersonQuantity: params.PersonQuantity,
+	}
+	inserted, err := h.store.Booking.Insert(c.Context(), booking, roomId)
 	if err != nil {
 		return err
 	}
 	return c.JSON(inserted)
 }
 
-func (h *RoomHandler) isRoomAvailableForBooking(c *fiber.Ctx, roomId primitive.ObjectID, params BookRoomParams) (bool, error) {
-	bookings, err := h.store.Booking.GetBookings(c.Context(), params.FromDate, params.TillDate, roomId)
+func (h *RoomHandler) isRoomAvailableForBooking(c *fiber.Ctx, roomId string, user *types.User, params BookRoomParams) (bool, error) {
+	roomOid, err := primitive.ObjectIDFromHex(roomId)
+	if err != nil {
+		return false, err
+	}
+	bookings, err := h.store.Booking.GetBookings(c.Context(), params.FromDate, params.TillDate, roomOid)
 	if err != nil {
 		return false, err
 	}
